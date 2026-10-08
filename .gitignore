@@ -1,0 +1,11 @@
+.env
+.env.*
+.dev.vars
+.wrangler/
+.publish/
+.staging/
+node_modules/
+dist/
+*.pem
+.DS_Store
+*.log
