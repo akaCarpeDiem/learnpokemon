@@ -1,0 +1,995 @@
+/* LearnPokémon — redesign layer.
+   Loaded after every other stylesheet. Nothing here changes what the app
+   renders; it restyles what is already on the page and styles the pieces
+   added by lp-redesign.js and lp-battle.js.
+
+   Contents
+     1. Tokens        one palette for type colours, surfaces, shadows, radii
+     2. Surfaces      the same panel recipe everywhere
+     3. Menu          one slim row on phones
+     4. Card tiles    tilt, light, foil, type hint
+     5. Card detail   flight from the grid, tilting card
+     6. Battle        stage and flank layouts, HP plates, turns
+     7. Timeline      pack glint
+     8. Pokédex
+*/
+
+/* ------------------------------------------------------------ 1. tokens */
+
+/* Animatable position for the foil band (plain custom properties can't tween). */
+@property --lp-sweep {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+
+:root {
+  /* Type colours: the values the app already uses for its type pills,
+     now shared by tile glows, hover hints and the battle. */
+  --lp-t-normal: #a8a77a;
+  --lp-t-fire: #ee8130;
+  --lp-t-water: #6390f0;
+  --lp-t-electric: #f7d02c;
+  --lp-t-grass: #7ac74c;
+  --lp-t-ice: #96d9d6;
+  --lp-t-fighting: #c22e28;
+  --lp-t-poison: #a33ea1;
+  --lp-t-ground: #e2bf65;
+  --lp-t-flying: #a98ff3;
+  --lp-t-psychic: #f95587;
+  --lp-t-bug: #a6b91a;
+  --lp-t-rock: #b6a136;
+  --lp-t-ghost: #735797;
+  --lp-t-dragon: #6f35fc;
+  --lp-t-dark: #705746;
+  --lp-t-steel: #b7b7ce;
+  --lp-t-fairy: #d685ad;
+
+  /* Surfaces: warm paper over the painted landscapes. */
+  --lp-paper: #fffaf2;
+  --lp-surface: color-mix(in srgb, var(--lp-paper) 84%, transparent);
+  --lp-surface-solid: color-mix(in srgb, var(--lp-paper) 96%, transparent);
+  --lp-edge: rgba(255, 255, 255, 0.78);
+  --lp-hair: rgba(43, 21, 72, 0.1);
+  /* Shadows take the ink colour, so panels sit on any landscape. */
+  --lp-shadow-rest: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 8px 22px rgba(43, 21, 72, 0.1);
+  --lp-shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 20px 44px rgba(43, 21, 72, 0.2);
+  --lp-r-lg: 24px;
+  --lp-r-md: 16px;
+  --lp-r-card: 4.6% / 3.3%; /* the corner of a real card */
+  --lp-ease: cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+
+[data-lp-type="normal"] { --lp-tc: var(--lp-t-normal); }
+[data-lp-type="fire"] { --lp-tc: var(--lp-t-fire); }
+[data-lp-type="water"] { --lp-tc: var(--lp-t-water); }
+[data-lp-type="electric"] { --lp-tc: var(--lp-t-electric); }
+[data-lp-type="grass"] { --lp-tc: var(--lp-t-grass); }
+[data-lp-type="ice"] { --lp-tc: var(--lp-t-ice); }
+[data-lp-type="fighting"] { --lp-tc: var(--lp-t-fighting); }
+[data-lp-type="poison"] { --lp-tc: var(--lp-t-poison); }
+[data-lp-type="ground"] { --lp-tc: var(--lp-t-ground); }
+[data-lp-type="flying"] { --lp-tc: var(--lp-t-flying); }
+[data-lp-type="psychic"] { --lp-tc: var(--lp-t-psychic); }
+[data-lp-type="bug"] { --lp-tc: var(--lp-t-bug); }
+[data-lp-type="rock"] { --lp-tc: var(--lp-t-rock); }
+[data-lp-type="ghost"] { --lp-tc: var(--lp-t-ghost); }
+[data-lp-type="dragon"] { --lp-tc: var(--lp-t-dragon); }
+[data-lp-type="dark"] { --lp-tc: var(--lp-t-dark); }
+[data-lp-type="steel"] { --lp-tc: var(--lp-t-steel); }
+[data-lp-type="fairy"] { --lp-tc: var(--lp-t-fairy); }
+
+/* ---------------------------------------------------------- 2. surfaces */
+
+.set-logo,
+.guide,
+.tabs,
+.card-tile,
+.ja-card,
+.dex-cell,
+.focus-panel {
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-edge);
+  box-shadow: var(--lp-shadow-rest);
+}
+.set-logo,
+.card-tile,
+.dex-cell {
+  border-radius: var(--lp-r-lg);
+}
+.guide,
+.focus-panel {
+  border-radius: var(--lp-r-md);
+}
+.card-tile,
+.ja-card,
+.dex-cell {
+  background: var(--lp-surface-solid);
+}
+button.ja-card {
+  border: 1px solid var(--lp-edge);
+  border-radius: 18px;
+}
+.app:not(.home-app) .nav-inner {
+  background: color-mix(in srgb, var(--lp-paper) 80%, transparent);
+  border-color: var(--lp-edge);
+  box-shadow: var(--lp-shadow-rest);
+}
+.attack,
+.evo-mon,
+.printing-card,
+.match-chip {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 2px 8px rgba(43, 21, 72, 0.06);
+}
+.field input,
+.field select,
+.search input {
+  border-color: var(--lp-hair);
+  box-shadow: 0 1px 2px rgba(43, 21, 72, 0.05);
+}
+:where(a, button, input, select, summary):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--blue, #2f6bff) 70%, white);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------- 3. menu */
+
+/* Phones: the pinned menu was three stacked rows (about a third of the
+   screen). Now it is one row: logo, links, and a search button that opens
+   across the row when tapped. */
+@media (max-width: 800px) {
+  .app:not(.home-app) .nav {
+    padding-top: 8px;
+  }
+  .app:not(.home-app) .nav-inner {
+    position: relative;
+    flex-wrap: nowrap;
+    gap: 4px;
+    width: calc(100% - 20px);
+    max-width: calc(100% - 20px);
+    padding: 5px 6px 5px 8px;
+    border-radius: 18px;
+  }
+  .app:not(.home-app) .nav-cluster {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 2px;
+  }
+  /* The logo mark stays as the way home; the wordmark gives its room to the links. */
+  .app:not(.home-app) .brand > span:not(.mark-frame) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .app:not(.home-app) .brand {
+    flex: none;
+    min-height: 40px;
+  }
+  .app:not(.home-app) .nav-links {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 14px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 14px), transparent);
+  }
+  .app:not(.home-app) .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+  .app:not(.home-app) .nav-links a {
+    flex: none;
+    min-height: 40px;
+    padding: 0 9px;
+    font-size: 0.92rem;
+  }
+  .app:not(.home-app) .nav-tools {
+    flex: none;
+    margin-left: 0;
+  }
+  .app:not(.home-app) .nav .search {
+    flex: none;
+    order: 0;
+    width: 40px;
+    margin: 0;
+    position: static;
+  }
+  .app:not(.home-app) .nav .search input {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    font-size: 16px; /* below 16px, iOS zooms the page on focus */
+    color: transparent;
+    cursor: pointer;
+    background: #fff
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232b1548' stroke-width='2.4' stroke-linecap='round'><circle cx='10.5' cy='10.5' r='6.5'/><path d='M15.5 15.5 21 21'/></svg>")
+      center / 18px no-repeat;
+  }
+  .app:not(.home-app) .nav .search input::placeholder {
+    color: transparent;
+  }
+  /* Open: the field covers the row. Stays open while it holds text. */
+  .app:not(.home-app) .nav .search:focus-within,
+  .app:not(.home-app) .nav .search:has(input:not(:placeholder-shown)) {
+    position: absolute;
+    inset: 5px 6px;
+    width: auto;
+    z-index: 3;
+  }
+  .app:not(.home-app) .nav .search:focus-within input,
+  .app:not(.home-app) .nav .search:has(input:not(:placeholder-shown)) input {
+    width: 100%;
+    padding: 0 14px 0 40px;
+    color: var(--ink);
+    cursor: text;
+    background-position: 12px center;
+  }
+  .app:not(.home-app) .nav .search:focus-within input::placeholder {
+    color: var(--muted);
+  }
+  .app:not(.home-app) .nav .search-pop {
+    left: 0;
+    right: 0;
+    width: auto;
+  }
+}
+
+/* -------------------------------------------------------- 4. card tiles */
+
+:is(.card-tile, .ja-card),
+.printing-card {
+  --lp-tc: var(--lp-t-normal);
+  --lp-pad: 10px;
+  position: relative;
+  isolation: isolate;
+  transition: transform 0.3s var(--lp-ease), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.printing-card {
+  --lp-pad: 8px;
+}
+.card-tile {
+  padding: var(--lp-pad) var(--lp-pad) 12px;
+}
+.ja-card {
+  --lp-pad: 8px;
+}
+
+/* The picture and the two layers over it share one transform, so they move
+   as a single card. The numbers come from lp-redesign.js. */
+:is(.card-tile, .ja-card) > img,
+:is(.card-tile, .ja-card) > .thumb-fallback,
+.printing-card > img,
+:is(.card-tile, .ja-card)::before,
+:is(.card-tile, .ja-card)::after,
+.printing-card::before {
+  transform: perspective(640px) rotateX(var(--lp-rx, 0deg)) rotateY(var(--lp-ry, 0deg)) scale(var(--lp-sc, 1));
+  transition: transform 0.55s var(--lp-ease), opacity 0.35s ease, filter 0.35s ease;
+  border-radius: var(--lp-r-card);
+}
+:is(.card-tile, .ja-card) > img,
+:is(.card-tile, .ja-card) > .thumb-fallback,
+.printing-card > img {
+  position: relative;
+  z-index: 1;
+}
+:is(.card-tile, .ja-card)::before,
+:is(.card-tile, .ja-card)::after,
+.printing-card::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: var(--lp-pad);
+  left: var(--lp-pad);
+  right: var(--lp-pad);
+  aspect-ratio: 63 / 88;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* While the pointer is on a card it follows quickly; on leaving it eases back. */
+:is(.card-tile, .ja-card).lp-active,
+.printing-card.lp-active {
+  --lp-sc: 1.05;
+  z-index: 3;
+  border-color: color-mix(in srgb, var(--lp-tc) 55%, white);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 0 0 1px color-mix(in srgb, var(--lp-tc) 30%, transparent),
+    0 18px 42px color-mix(in srgb, var(--lp-tc) 42%, transparent),
+    0 10px 20px rgba(43, 21, 72, 0.14);
+}
+:is(.card-tile, .ja-card).lp-active > img,
+:is(.card-tile, .ja-card).lp-active > .thumb-fallback,
+.printing-card.lp-active > img,
+:is(.card-tile, .ja-card).lp-active::before,
+:is(.card-tile, .ja-card).lp-active::after,
+.printing-card.lp-active::before {
+  transition-duration: 0.1s, 0.35s, 0.35s;
+}
+:is(.card-tile, .ja-card).lp-active > img,
+.printing-card.lp-active > img {
+  filter: drop-shadow(0 12px 14px rgba(27, 16, 40, 0.38));
+}
+
+/* Light: a soft glare that sits where the pointer is. Every card gets it. */
+:is(.card-tile, .ja-card)::before,
+.printing-card::before {
+  background: radial-gradient(
+    farthest-corner circle at var(--lp-px, 50%) var(--lp-py, 50%),
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.22) 26%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  mix-blend-mode: overlay;
+}
+:is(.card-tile, .ja-card).lp-active::before,
+.printing-card.lp-active::before {
+  opacity: calc(0.4 + var(--lp-far, 0) * 0.4);
+}
+
+/* Foil: holo and other shiny rarities also get a rainbow band that slides
+   with the pointer, the way a real holo shifts as you turn it. */
+:is(.card-tile, .ja-card)[data-lp-foil]::before,
+.printing-card[data-lp-foil]::before {
+  background:
+    radial-gradient(
+      farthest-corner circle at var(--lp-px, 50%) var(--lp-py, 50%),
+      rgba(255, 255, 255, 0.7) 0%,
+      rgba(255, 255, 255, 0.1) 30%,
+      rgba(0, 0, 0, 0.35) 100%
+    ),
+    repeating-linear-gradient(
+        112deg,
+        hsl(2 100% 73%) 0%,
+        hsl(53 100% 69%) 5%,
+        hsl(93 100% 69%) 10%,
+        hsl(176 100% 76%) 15%,
+        hsl(228 100% 74%) 20%,
+        hsl(283 100% 73%) 25%,
+        hsl(2 100% 73%) 30%
+      )
+      var(--lp-px, var(--lp-sweep)) var(--lp-py, var(--lp-sweep)) / 260% 260%;
+  background-blend-mode: soft-light, normal;
+  mix-blend-mode: color-dodge;
+  filter: brightness(0.5) contrast(1.9) saturate(1.05);
+}
+:is(.card-tile, .ja-card)[data-lp-foil].lp-active::before,
+.printing-card[data-lp-foil].lp-active::before {
+  opacity: calc(0.28 + var(--lp-far, 0) * 0.22);
+}
+/* Where the browser can tie an animation to scrolling, foils shimmer faintly
+   as they pass through the screen. This is what touch screens see most. */
+@supports (animation-timeline: view()) {
+  :is(.card-tile, .ja-card)[data-lp-foil]::before {
+    opacity: 0.16;
+    animation: lp-foil-pass linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 100%;
+  }
+  :is(.card-tile, .ja-card)[data-lp-foil].lp-active::before {
+    animation: none;
+  }
+}
+@keyframes lp-foil-pass {
+  from { --lp-sweep: 0%; }
+  to { --lp-sweep: 100%; }
+}
+
+/* Type hint: a small moving effect in the card's type colour. The full
+   effect is saved for the detail view; this is only a taste of it. */
+:is(.card-tile, .ja-card)::after {
+  --c: var(--lp-tc);
+  --hot: color-mix(in srgb, var(--lp-tc) 45%, white);
+  mix-blend-mode: screen;
+}
+:is(.card-tile, .ja-card).lp-active::after {
+  opacity: 0.8;
+}
+/* rise — embers, bubbles, fumes climbing from the bottom edge */
+:is(.card-tile, .ja-card)[data-lp-fx="rise"]::after {
+  background:
+    radial-gradient(circle, var(--hot) 0 1.6px, transparent 2.6px) 0 0 / 34px 58px,
+    radial-gradient(circle, var(--c) 0 2.2px, transparent 3.4px) 14px 22px / 52px 76px,
+    radial-gradient(circle, #fff 0 1px, transparent 1.8px) 30px 40px / 44px 66px,
+    linear-gradient(to top, color-mix(in srgb, var(--c) 42%, transparent), transparent 40%);
+  -webkit-mask-image: linear-gradient(to top, #000 12%, transparent 82%);
+  mask-image: linear-gradient(to top, #000 12%, transparent 82%);
+}
+:is(.card-tile, .ja-card)[data-lp-fx="rise"].lp-active::after {
+  animation: lp-fx-rise 1.9s linear infinite;
+}
+@keyframes lp-fx-rise {
+  to { background-position: 0 -58px, 14px -54px, 30px -26px, 0 0; }
+}
+/* fall — snow, dust and grit coming down from the top edge */
+:is(.card-tile, .ja-card)[data-lp-fx="fall"]::after {
+  background:
+    radial-gradient(circle, #fff 0 1.5px, transparent 2.5px) 0 0 / 38px 54px,
+    radial-gradient(circle, var(--hot) 0 2px, transparent 3.2px) 18px 12px / 56px 72px,
+    linear-gradient(to bottom, color-mix(in srgb, var(--c) 55%, transparent), transparent 40%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 15%, transparent 88%);
+  mask-image: linear-gradient(to bottom, #000 15%, transparent 88%);
+}
+:is(.card-tile, .ja-card)[data-lp-fx="fall"].lp-active::after {
+  animation: lp-fx-fall 2.4s linear infinite;
+}
+@keyframes lp-fx-fall {
+  to { background-position: 0 54px, 18px 84px, 0 0; }
+}
+/* drift — soft motes wandering across (grass, psychic, ghost, fairy…) */
+:is(.card-tile, .ja-card)[data-lp-fx="drift"]::after {
+  background:
+    radial-gradient(circle, var(--hot) 0 2px, transparent 7px) 0 0 / 62px 70px,
+    radial-gradient(circle, var(--c) 0 3px, transparent 10px) 30px 34px / 88px 96px,
+    radial-gradient(120% 90% at 50% 100%, color-mix(in srgb, var(--c) 55%, transparent), transparent 60%);
+}
+:is(.card-tile, .ja-card)[data-lp-fx="drift"].lp-active::after {
+  animation: lp-fx-drift 5s linear infinite;
+}
+@keyframes lp-fx-drift {
+  to { background-position: 62px -70px, -58px -62px, 0 0; }
+}
+/* flash — a quick crackle (electric) or impact streaks (fighting) */
+:is(.card-tile, .ja-card)[data-lp-fx="flash"]::after {
+  background:
+    linear-gradient(104deg, transparent 47.5%, #fff 49.5%, var(--hot) 50.5%, transparent 52.5%) 20% 0 / 55% 100% no-repeat,
+    linear-gradient(76deg, transparent 48%, var(--hot) 49.6%, #fff 50.4%, transparent 52%) 85% 0 / 45% 100% no-repeat,
+    radial-gradient(90% 70% at 50% 50%, color-mix(in srgb, var(--c) 45%, transparent), transparent 70%);
+}
+:is(.card-tile, .ja-card)[data-lp-fx="flash"].lp-active::after {
+  animation: lp-fx-flash 1.15s steps(1, end) infinite;
+}
+@keyframes lp-fx-flash {
+  0% { opacity: 0.8; background-position: 20% 0, 85% 0, 0 0; }
+  12% { opacity: 0.25; }
+  20% { opacity: 1; background-position: 62% 0, 30% 0, 0 0; }
+  32% { opacity: 0.2; }
+  58% { opacity: 0.9; background-position: 5% 0, 100% 0, 0 0; }
+  70% { opacity: 0.15; }
+}
+/* sweep — a clean sheen crossing the card (normal, steel, flying) */
+:is(.card-tile, .ja-card)[data-lp-fx="sweep"]::after {
+  background: linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, 0.85) 50%, transparent 64%) 150% 0 / 220% 100% no-repeat;
+}
+:is(.card-tile, .ja-card)[data-lp-fx="sweep"].lp-active::after {
+  animation: lp-fx-sweep 1.5s ease-in-out infinite;
+}
+@keyframes lp-fx-sweep {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+
+/* Dealing the cards: tiles arrive in a quick wave when a set opens. It runs
+   once per tile, when the tile first appears; re-sorting keeps the app's own
+   shuffle motion because the tiles already exist by then. */
+.card-grid > .card-tile {
+  animation: lp-deal 0.5s var(--lp-ease) backwards;
+}
+.card-grid > .card-tile:nth-child(6n + 2) { animation-delay: 35ms; }
+.card-grid > .card-tile:nth-child(6n + 3) { animation-delay: 70ms; }
+.card-grid > .card-tile:nth-child(6n + 4) { animation-delay: 105ms; }
+.card-grid > .card-tile:nth-child(6n + 5) { animation-delay: 140ms; }
+.card-grid > .card-tile:nth-child(6n + 6) { animation-delay: 175ms; }
+@keyframes lp-deal {
+  from { opacity: 0; transform: translateY(16px) rotate(-1.5deg) scale(0.97); }
+}
+
+/* Phones: two cards per row instead of one, so a set is half as long to scroll. */
+@media (max-width: 480px) {
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .card-tile {
+    --lp-pad: 7px;
+    border-radius: 18px;
+    gap: 6px;
+    padding-bottom: 9px;
+  }
+  .card-tile .card-meta strong { font-size: 0.92rem; }
+  .card-tile .card-meta em { font-size: 0.74rem; }
+  .card-grid > .card-tile:nth-child(n) { animation-delay: 0ms; }
+  .card-grid > .card-tile:nth-child(even) { animation-delay: 45ms; }
+}
+
+/* Text under the card */
+.card-tile .card-meta strong {
+  letter-spacing: -0.01em;
+}
+
+/* While a card is in flight its place in the grid is left empty. */
+.lp-lifted {
+  visibility: hidden;
+}
+
+/* ------------------------------------------------------- 5. card detail */
+
+.lp-ghost {
+  position: fixed;
+  z-index: 90;
+  margin: 0;
+  object-fit: contain;
+  pointer-events: none;
+  transform-origin: center;
+  will-change: transform;
+  filter: drop-shadow(0 22px 30px rgba(20, 8, 30, 0.45));
+}
+.lp-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  pointer-events: none;
+  background: #1c102875;
+}
+
+.modal-back {
+  animation: lp-back-in 0.3s ease both;
+}
+@keyframes lp-back-in {
+  from { background-color: transparent; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); }
+}
+.modal-panel {
+  animation: lp-panel-in 0.42s var(--lp-ease) both;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 34px 90px rgba(20, 8, 30, 0.34);
+}
+@keyframes lp-panel-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.975); }
+}
+/* The card arrives by air; its frame waits empty until it lands. */
+.modal-back.lp-flying .art-frame {
+  visibility: hidden;
+}
+.modal-back.lp-landed .art-frame {
+  animation: lp-land 0.5s var(--lp-ease);
+}
+@keyframes lp-land {
+  0% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+/* The rest of the detail view follows the card in. */
+.modal-back.lp-flying .modal-copy,
+.modal-back.lp-landed .modal-copy {
+  animation: lp-copy-in 0.5s 0.12s var(--lp-ease) backwards;
+}
+@keyframes lp-copy-in {
+  from { opacity: 0; transform: translateX(14px); }
+}
+
+/* The big card leans with the pointer too, with the type effect riding on it. */
+.modal-panel .art-frame {
+  transform: perspective(900px) rotateX(var(--lp-rx, 0deg)) rotateY(var(--lp-ry, 0deg));
+  transition: transform 0.6s var(--lp-ease), box-shadow 0.4s ease;
+  box-shadow: 0 14px 30px rgba(27, 16, 40, 0.22);
+}
+.modal-panel .art-frame.lp-active {
+  transition-duration: 0.1s, 0.4s;
+  box-shadow: 0 26px 46px rgba(27, 16, 40, 0.34);
+}
+.modal-panel .art-frame.is-card {
+  background: var(--lp-ph, none) center / contain no-repeat, #1b1424;
+}
+.modal-panel .art-frame.is-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    farthest-corner circle at var(--lp-px, 50%) var(--lp-py, 50%),
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.18) 28%,
+    rgba(0, 0, 0, 0.28) 100%
+  );
+  mix-blend-mode: overlay;
+}
+.modal-panel .art-frame.is-card.lp-active::after {
+  opacity: calc(0.3 + var(--lp-far, 0) * 0.4);
+}
+
+/* --------------------------------------------------------------- 6. battle */
+
+.set-page {
+  --lp-arena-n: 128; /* band height in px, as a bare number so it can be divided */
+  --lp-arena-h: calc(var(--lp-arena-n) * 1px);
+}
+@media (min-width: 700px) {
+  .set-page { --lp-arena-n: 164; }
+}
+@media (min-width: 1100px) {
+  .set-page { --lp-arena-n: 184; }
+}
+
+.lp-vs-root.lp-arena {
+  /* The stage never grows wider than a comfortable face-off. */
+  --lp-stage-w: min(var(--lp-arena-width, 100%), 780px);
+  --lp-plate-h: 34px;
+  --lp-fs: calc(var(--lp-arena-n) - 38); /* fighter size, bare number */
+  --lp-fighter: calc(var(--lp-fs) * 1px);
+  font-family: var(--sans, Outfit, system-ui, sans-serif);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Stage: a band in the page, directly under the set header. */
+  .lp-vs-root.lp-arena[data-mode="stage"]:not([hidden]) {
+    display: block !important;
+    position: absolute;
+    inset: auto;
+    top: calc(var(--lp-arena-top, 0px) + 10px);
+    left: calc(var(--lp-arena-left, 0px) + (var(--lp-arena-width, 100%) - var(--lp-stage-w)) / 2);
+    width: var(--lp-stage-w);
+    height: var(--lp-arena-h);
+    overflow: visible;
+    z-index: 1;
+  }
+  /* The header makes room for it. */
+  .set-page[data-lp-arena="stage"] .set-hero {
+    margin-bottom: calc(var(--lp-arena-h) + 16px);
+  }
+  .set-page[data-lp-arena="stage"] .guide {
+    margin-top: 0;
+  }
+}
+
+/* --- stage layout --- */
+.lp-arena[data-mode="stage"] .lp-vs-flank {
+  position: absolute;
+  top: auto;
+  bottom: 0;
+  left: auto;
+  right: auto;
+  transform: none;
+  width: clamp(124px, 40%, 230px);
+  height: 100%;
+  justify-content: flex-end;
+  filter: drop-shadow(0 8px 10px rgba(16, 22, 36, 0.3));
+}
+.lp-arena[data-mode="stage"] .lp-vs-flank--left {
+  left: 0;
+  align-items: flex-start;
+}
+.lp-arena[data-mode="stage"] .lp-vs-flank--right {
+  right: 0;
+  align-items: flex-end;
+}
+.lp-arena[data-mode="stage"] .lp-vs-sprite-wrap {
+  width: var(--lp-fighter);
+  flex: none;
+}
+.lp-arena[data-mode="stage"] .lp-vs-plate {
+  width: 100%;
+  margin-bottom: 4px;
+}
+.lp-arena[data-mode="stage"] .lp-vs-fx {
+  --s: calc(var(--lp-fs) / 250);
+  position: absolute;
+  top: calc(100% - var(--lp-fighter) / 2 - 140px);
+  margin-top: 0;
+  height: 280px;
+  width: calc((var(--lp-stage-w) - var(--lp-fighter) * 1.3) / var(--s));
+  transform: scale(var(--s));
+}
+.lp-arena[data-mode="stage"] .lp-vs-fx--left {
+  left: calc(var(--lp-fighter) * 0.65);
+  right: auto;
+  transform-origin: left center;
+}
+.lp-arena[data-mode="stage"] .lp-vs-fx--right {
+  right: calc(var(--lp-fighter) * 0.65);
+  left: auto;
+  transform-origin: right center;
+}
+.lp-arena[data-mode="stage"] .lp-vs-caption {
+  position: absolute;
+  left: calc(var(--lp-fighter) + 6px);
+  right: calc(var(--lp-fighter) + 6px);
+  bottom: 2px;
+}
+
+/* --- flank layout: wide screens, fighters in the margins behind the cards --- */
+.lp-arena[data-mode="flank"] .lp-vs-flank {
+  /* Sized to the margin so most of each fighter shows beside the cards. */
+  width: clamp(240px, calc((100vw - 1240px) / 2 + 96px), 444px);
+}
+.lp-arena[data-mode="flank"] .lp-vs-flank--left {
+  left: max(6px, calc((100vw - 1240px) / 2 - 454px));
+}
+.lp-arena[data-mode="flank"] .lp-vs-flank--right {
+  right: max(6px, calc((100vw - 1240px) / 2 - 454px));
+}
+.lp-arena[data-mode="flank"] .lp-vs-plate {
+  width: min(220px, 78%);
+  margin-bottom: -3%;
+}
+.lp-arena[data-mode="flank"] .lp-vs-flank--left .lp-vs-plate { align-self: flex-start; margin-left: 4%; }
+.lp-arena[data-mode="flank"] .lp-vs-flank--right .lp-vs-plate { align-self: flex-end; margin-right: 4%; }
+.lp-arena[data-mode="flank"] .lp-vs-caption {
+  position: fixed;
+  /* just under the HP plate of whoever is acting */
+  top: calc(46% - clamp(240px, calc((100vw - 1240px) / 2 + 96px), 444px) / 2 + 24px);
+  width: min(220px, calc((100vw - 1240px) / 2 - 20px));
+}
+.lp-arena[data-mode="flank"][data-speaker="left"] .lp-vs-caption { left: 14px; text-align: left; }
+.lp-arena[data-mode="flank"][data-speaker="right"] .lp-vs-caption { right: 14px; text-align: right; }
+.lp-arena[data-mode="flank"][data-speaker="both"] .lp-vs-caption { display: none; }
+
+/* --- HP plate --- */
+.lp-vs-plate {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 8px;
+  align-items: baseline;
+  min-height: var(--lp-plate-h);
+  padding: 5px 9px 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--lp-paper) 88%, transparent);
+  border: 1px solid var(--lp-edge);
+  box-shadow: 0 4px 12px rgba(27, 16, 40, 0.16);
+  color: #2b1548;
+  position: relative;
+  z-index: 2;
+}
+.lp-vs-name {
+  font-weight: 700;
+  font-size: 0.78rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lp-vs-hptext {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #6b5684;
+}
+.lp-vs-hp {
+  grid-column: 1 / -1;
+  display: block;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(43, 21, 72, 0.14);
+  overflow: hidden;
+}
+.lp-vs-hp i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transform-origin: left center;
+  background: #3fb868;
+  transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1), background-color 0.3s ease;
+}
+.lp-vs-hp.is-instant i { transition: none; }
+.lp-vs-hp[data-level="low"] i { background: #e9a91f; }
+.lp-vs-hp[data-level="crit"] i { background: #e5484d; }
+
+/* --- caption: what just happened --- */
+.lp-vs-caption {
+  text-align: center;
+  pointer-events: none;
+  z-index: 3;
+}
+.lp-vs-caption span {
+  display: inline-block;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #1b1028 78%, transparent);
+  color: #fff8ef;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+}
+.lp-vs-caption i {
+  font-style: normal;
+  font-weight: 500;
+  opacity: 0.82;
+}
+.lp-vs-caption.is-on span {
+  animation: lp-say 2.4s ease both;
+}
+@keyframes lp-say {
+  0% { opacity: 0; transform: translateY(5px); }
+  10%, 78% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+
+/* --- damage number --- */
+/* The sprite sits above the plate so a damage number is never hidden behind it. */
+.lp-vs-root.lp-arena .lp-vs-sprite-wrap {
+  z-index: 3;
+}
+.lp-vs-dmg {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  z-index: 4;
+  translate: -50% 0;
+  font-family: var(--display, Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(1.15rem, calc(var(--lp-fs) * 0.2px), 2.4rem);
+  line-height: 1;
+  color: #fff;
+  -webkit-text-stroke: 4px #2b1548;
+  paint-order: stroke fill;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+.lp-arena[data-mode="flank"] .lp-vs-dmg { font-size: 2.6rem; }
+.lp-vs-dmg[data-note="weak"] { color: #ffd23f; scale: 1.25; }
+.lp-vs-dmg[data-note="resist"] { color: #cfc7da; scale: 0.85; }
+.lp-vs-dmg.is-on {
+  animation: lp-dmg 1.05s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+@keyframes lp-dmg {
+  0% { opacity: 0; transform: translateY(12px) scale(0.5); }
+  18% { opacity: 1; transform: translateY(-6px) scale(1.18); }
+  32% { transform: translateY(-10px) scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-34px) scale(1); }
+}
+
+/* --- the turn: wind up, strike, take the hit --- */
+.lp-vs-root.lp-arena .lp-vs-sprite {
+  transition: transform 0.28s cubic-bezier(0.3, 1.4, 0.5, 1), filter 0.25s ease;
+}
+/* The left fighter is mirrored, so its sideways moves are mirrored too. */
+.lp-vs-root.lp-arena .lp-vs-flank--left.is-windup .lp-vs-sprite {
+  transform: scaleX(-1) translateX(calc(var(--lp-fs) * 0.1px)) rotate(7deg) scale(0.95);
+}
+.lp-vs-root.lp-arena .lp-vs-flank--right.is-windup .lp-vs-sprite {
+  transform: translateX(calc(var(--lp-fs) * 0.1px)) rotate(7deg) scale(0.95);
+}
+.lp-vs-root.lp-arena .lp-vs-flank--left.is-attacking .lp-vs-sprite {
+  transform: scaleX(-1) translateX(calc(var(--lp-fs) * -0.2px)) rotate(-5deg) scale(1.06);
+}
+.lp-vs-root.lp-arena .lp-vs-flank--right.is-attacking .lp-vs-sprite {
+  transform: translateX(calc(var(--lp-fs) * -0.2px)) rotate(-5deg) scale(1.06);
+}
+.lp-vs-root.lp-arena .lp-vs-flank.is-windup .lp-vs-sprite,
+.lp-vs-root.lp-arena .lp-vs-flank.is-attacking .lp-vs-sprite {
+  filter: brightness(1.1) saturate(1.15) drop-shadow(0 0 14px var(--lp-atk, #fff));
+}
+.lp-vs-root.lp-arena .lp-vs-flank--right.is-hit .lp-vs-sprite {
+  animation: lp-vs-shake 0.48s ease, lp-hit-flash 0.48s ease;
+}
+.lp-vs-root.lp-arena .lp-vs-flank--left.is-hit .lp-vs-sprite {
+  animation: lp-vs-shake-flip 0.48s ease, lp-hit-flash 0.48s ease;
+}
+@keyframes lp-hit-flash {
+  0%, 100% { filter: none; }
+  12% { filter: brightness(2.6) saturate(0.2); }
+  40% { filter: brightness(1.5) saturate(0.7); }
+}
+
+/* --- entering, fainting, winning --- */
+.lp-vs-root.lp-arena .lp-vs-flank--left.is-entering .lp-vs-sprite-wrap {
+  animation: lp-enter-left 0.65s var(--lp-ease) both;
+}
+.lp-vs-root.lp-arena .lp-vs-flank--right.is-entering .lp-vs-sprite-wrap {
+  animation: lp-enter-right 0.65s var(--lp-ease) both;
+}
+@keyframes lp-enter-left {
+  from { opacity: 0; transform: translateX(-70%) scale(0.8); }
+}
+@keyframes lp-enter-right {
+  from { opacity: 0; transform: translateX(70%) scale(0.8); }
+}
+.lp-vs-root.lp-arena .lp-vs-flank.is-fainted .lp-vs-sprite-wrap {
+  animation: lp-faint 0.8s cubic-bezier(0.5, 0, 0.8, 0.4) forwards;
+}
+@keyframes lp-faint {
+  0% { opacity: 1; transform: none; filter: none; }
+  30% { transform: translateY(-4%) rotate(-4deg); filter: grayscale(0.6); }
+  100% { opacity: 0; transform: translateY(34%) scaleY(0.72); filter: grayscale(1); }
+}
+.lp-vs-root.lp-arena .lp-vs-flank.is-fainted .lp-vs-plate {
+  opacity: 0.55;
+}
+.lp-vs-root.lp-arena .lp-vs-flank.is-winner .lp-vs-sprite-wrap {
+  animation: lp-win 0.62s cubic-bezier(0.3, 0, 0.3, 1) 2;
+}
+@keyframes lp-win {
+  0%, 100% { transform: none; }
+  40% { transform: translateY(-12%) scale(1.04); }
+}
+.lp-vs-plate {
+  transition: opacity 0.3s ease;
+}
+
+/* ------------------------------------------------------------ 7. timeline */
+
+/* A glint crosses the pack in the middle every few seconds, clipped to the
+   pack's own outline. The pack also leans with the pointer. */
+.pack.is-center .pack-artbox {
+  transform: perspective(900px) rotateX(var(--lp-rx, 0deg)) rotateY(var(--lp-ry, 0deg));
+  transition: transform 0.6s var(--lp-ease);
+}
+.pack.is-center.lp-active .pack-artbox {
+  transition-duration: 0.12s;
+}
+.pack.is-center .pack-artbox::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(108deg, transparent 38%, rgba(255, 255, 255, 0.5) 47%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.5) 53%, transparent 62%) 160% 0 / 240% 100% no-repeat;
+  mix-blend-mode: overlay;
+  -webkit-mask: var(--lp-pack, linear-gradient(transparent, transparent)) center / contain no-repeat;
+  mask: var(--lp-pack, linear-gradient(transparent, transparent)) center / contain no-repeat;
+  animation: lp-glint 5.5s ease-in-out infinite;
+}
+@keyframes lp-glint {
+  0%, 62% { background-position: 160% 0; }
+  88%, 100% { background-position: -60% 0; }
+}
+.focus-panel {
+  background: color-mix(in srgb, var(--lp-paper) 78%, transparent);
+}
+
+/* ------------------------------------------------------------- 8. pokédex */
+
+/* The heading sits on bright painted clouds; a soft shade behind it keeps it readable. */
+.dex-page .page-intro.dex-intro {
+  position: relative;
+  z-index: 0;
+}
+.dex-page .page-intro.dex-intro::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -18px -28px -14px;
+  border-radius: 40px;
+  background: radial-gradient(120% 100% at 30% 50%, rgba(10, 24, 70, 0.46), rgba(10, 24, 70, 0.18) 55%, transparent 78%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+/* Name, types and total all fit inside the tile now. */
+.dex-cell {
+  gap: 4px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.dex-cell {
+  --lp-tc: var(--lp-t-normal);
+  transition: transform 0.3s var(--lp-ease), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.dex-cell img {
+  transition: transform 0.35s var(--lp-ease);
+}
+.dex-cell:hover,
+.dex-cell:focus-visible {
+  border-color: color-mix(in srgb, var(--lp-tc) 55%, white);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 16px 36px color-mix(in srgb, var(--lp-tc) 40%, transparent),
+    0 8px 18px rgba(43, 21, 72, 0.12);
+}
+.dex-cell:hover img,
+.dex-cell:focus-visible img {
+  transform: translateY(-3px) scale(1.1);
+}
+
+/* Narrow stage: the plates already carry the names, so the line is just the move. */
+@media (max-width: 520px) {
+  .lp-arena[data-mode="stage"] .lp-vs-caption i { display: none; }
+}
+
+/* Phones: a shorter logo box, so the cards start sooner. */
+@media (max-width: 980px) {
+  .set-logo { min-height: 120px; padding: 14px; }
+  .set-logo img { max-height: 92px; }
+}
